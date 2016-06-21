@@ -1,0 +1,295 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+swagger: '2.0'
+info:
+  title: tap-container-broker
+  version: "1"
+schemes:
+  - https
+produces:
+  - application/json
+consumes:
+  - application/json
+paths:
+  /api/v1/service/{instanceId}/logs:
+    get:
+      summary: Get instance logs
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Instance logs
+          schema:
+            type: object
+            additionalProperties:
+              type: string
+        404:
+          description: No such instance or logs not found
+        500:
+          description: Unexpected error
+  /api/v1/service/{instanceId}/credentials:
+    get:
+      summary: Get instance credentials
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Instance credentials
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ContainerCredentials'
+        404:
+          description: No such instance
+        500:
+          description: Unexpected error
+  /api/v1/service/{instanceId}/hosts:
+    get:
+      summary: Get instance hosts
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Instance host list
+          schema:
+            type: array
+            items:
+              type: string
+        500:
+          description: Unexpected error
+  /api/v1/secret/{secretName}:
+    get:
+      summary: Get Secret
+      parameters:
+        - name: secretName
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Secret
+          schema:
+            $ref: '#/definitions/k8s.Secret'
+        404:
+          description: No such secret
+        500:
+          description: Unexpected error
+  /api/v1/service/{instanceId}/expose:
+    post:
+      summary: Expose specific service ports
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+              $ref: "#/definitions/ExposeRequest"
+      responses:
+        200:
+          description: Instance exposed hosts
+          schema:
+            type: array
+            items:
+              type: string
+        404:
+          description: No such instance
+        500:
+          description: Unexpected error
+    delete:
+      summary: Delete service port exposing
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        209:
+          description: Service port expsoing deleted
+        404:
+          description: No such instance
+        500:
+          description: Unexpected error
+  /api/v1/configmap/{configMapName}:
+    get:
+      summary: Get ConfigMap
+      parameters:
+        - name: configMapName
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: ConfigMap
+          schema:
+            $ref: '#/definitions/k8s.ConfigMap'
+        404:
+          description: No such configmap
+        500:
+          description: Unexpected error
+  /api/v1/bind/{srcInstanceId}/{dstInstanceId}:
+    post:
+      summary: Add binding to instance
+      parameters:
+        - name: srcInstanceId
+          in: path
+          required: true
+          type: string
+        - name: dstInstanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        202:
+          description: Bind accepted
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        500:
+          description: Unexpected error
+  /api/v1/unbind/{srcInstanceId}/{dstInstanceId}:
+    post:
+      summary: Remove binding from instance
+      parameters:
+        - name: srcInstanceId
+          in: path
+          required: true
+          type: string
+        - name: dstInstanceId
+          in: path
+          required: true
+          type: string
+      responses:
+        202:
+          description: Unbind accepted
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        500:
+          description: Unexpected error
+  /api/v1//deployment/core/versions:
+    get:
+      summary: Get version information about core components
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/versionsResponse'
+        404:
+          description: Not found
+        500:
+          description: Unexpected error
+definitions:
+  MessageResponse:
+    type: object
+    properties:
+      message:
+        type: string
+  ExposeRequest:
+    type: object
+    required:
+      - hostname
+    properties:
+      ports:
+        type: array
+        items:
+          type: integer
+          format: int32
+      hostname:
+        type: string
+      ip:
+        type: string
+  ContainerCredentials:
+    type: object
+    properties:
+      name:
+        type: string
+      envs:
+        type: object
+        additionalProperties:
+          type: string
+  versionsResponse:
+    type: object
+    properties:
+      name:
+        type: string
+      image:
+        type: string
+      imageVersion:
+        type: string
+      signature:
+        type: string
+  k8s.Secret:
+    type: object
+    properties:
+      metadata:
+        $ref: '#/definitions/k8s.ObjectMetadata'
+      data:
+        type: object
+        additionalProperties:
+          type: string
+      type:
+        type: string
+  k8s.ConfigMap:
+    type: object
+    properties:
+      metadata:
+        $ref: '#/definitions/k8s.ObjectMetadata'
+      data:
+        type: object
+        additionalProperties:
+          type: string
+  k8s.ObjectMetadata:
+    type: object
+    properties:
+      name:
+        type: string
+      generateName:
+        type: string
+      namespace:
+        type: string
+      selfLink:
+        type: string
+      uid:
+        type: string
+      resourceVersion:
+        type: string
+      generation:
+        type: integer
+        format: int64
+      creationTimestamp:
+        type: string
+      deletionTimestamp:
+        type: string
+      deletionGracePeriodSeconds:
+        type: integer
+        format: int64
+      labels:
+        type: object
+        additionalProperties:
+          type: string
+      annotations:
+        type: object
+        additionalProperties:
+          type: string

@@ -1,0 +1,9 @@
+.idea
+/application/
+.cache
+/pkg
+/bin
+build_info.ini
+*.iml
+/temp
+/tap-container-broker
